@@ -18,7 +18,6 @@ dist/
 node_modules/
 
 # Build artifacts
-*.css
 *.js
 *.map
 
