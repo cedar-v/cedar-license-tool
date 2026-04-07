@@ -1,0 +1,21 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "cedar-license-tool",
+  "outputfilename": "CedarLicenseTool",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Cedar",
+    "email": "info@cedar-v.com"
+  },
+  "info": {
+    "companyName": "Cedar",
+    "productName": "CedarLicenseTool",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright 2026",
+    "comments": "许可证分发工具"
+  },
+  "wailsjsdir": "./frontend/src"
+}

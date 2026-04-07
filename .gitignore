@@ -1,0 +1,51 @@
+# Build output
+*.exe
+*.dll
+*.so
+*.dylib
+*.app
+
+# Wails build
+build/
+dist/
+
+# Go
+*.exe (for Windows .exe files from go build)
+/cedar-license-tool
+*.exe
+
+# Frontend dependencies
+node_modules/
+
+# Build artifacts
+*.css
+*.js
+*.map
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.temp
+.cache/
+
+# Wails metadata
+wailsjs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
