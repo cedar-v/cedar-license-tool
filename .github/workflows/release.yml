@@ -54,16 +54,14 @@ jobs:
 
       - name: Set version for manual build
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-          perl -i -pe 's/"productVersion": "[^"]*"/"productVersion": "${{ github.event.inputs.version }}"/' wails.json
+        run: node -e "const fs=require('fs');const v='${{ github.event.inputs.version }}';const j=JSON.parse(fs.readFileSync('wails.json','utf8'));j.productVersion=v;fs.writeFileSync('wails.json',JSON.stringify(j,null,2)+'\n');console.log('version:',v);"
 
       - name: Set version for tag build
         if: github.event_name == 'push'
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          perl -i -pe "s/\"productVersion\": \"[^\"]*\"/\"productVersion\": \"$VERSION\"/" wails.json
+          node -e "const fs=require('fs');const v='$VERSION';const j=JSON.parse(fs.readFileSync('wails.json','utf8'));j.productVersion=v;fs.writeFileSync('wails.json',JSON.stringify(j,null,2)+'\n');console.log('version:',v);"
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -91,15 +89,33 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download windows artifact
         uses: actions/download-artifact@v4
         with:
+          name: CedarLicenseTool-windows-amd64
+          path: build/artifacts
+
+      - name: Download linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CedarLicenseTool-linux-amd64
+          path: build/artifacts
+
+      - name: Download darwin-amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CedarLicenseTool-darwin-amd64
+          path: build/artifacts
+
+      - name: Download darwin-arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: CedarLicenseTool-darwin-arm64
           path: build/artifacts
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/artifacts/**/*
-          generate_release_notes: true
+          files: build/artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
