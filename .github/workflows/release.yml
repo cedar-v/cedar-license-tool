@@ -56,14 +56,14 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-          sed -i 's/"productVersion": "[^"]*"/"productVersion": "${{ github.event.inputs.version }}"/' wails.json
+          perl -i -pe 's/"productVersion": "[^"]*"/"productVersion": "${{ github.event.inputs.version }}"/' wails.json
 
       - name: Set version for tag build
         if: github.event_name == 'push'
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          sed -i "s/\"productVersion\": \"[^\"]*\"/\"productVersion\": \"$VERSION\"/" wails.json
+          perl -i -pe "s/\"productVersion\": \"[^\"]*\"/\"productVersion\": \"$VERSION\"/" wails.json
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
