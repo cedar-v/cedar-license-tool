@@ -320,8 +320,8 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:            "CedarLicenseTool - 许可证分发工具",
-		Width:            1440,
-		Height:           900,
+		Width:            1024,
+		Height:           1020,
 		BackgroundColour: &options.RGBA{R: 234, G: 246, B: 255, A: 255},
 		MinWidth:         900,
 		MinHeight:        700,

@@ -20,14 +20,16 @@ function App() {
   const [hardwareFingerprint, setHardwareFingerprint] = useState('')
   const [durationType, setDurationType] = useState<'limited' | 'unlimited'>('limited')
   const [selectedDuration, setSelectedDuration] = useState<number>(12)
-  const [customMonths, setCustomMonths] = useState(1)
+  const [customMonths, setCustomMonths] = useState('')
   const [keyPair, setKeyPair] = useState<KeyPair | null>(null)
   const [licenseContent, setLicenseContent] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<'private' | 'public' | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [customUnit, setCustomUnit] = useState<'months' | 'years'>('months')
+  const [configJson, setConfigJson] = useState('')
 
   useEffect(() => {
     loadKeys()
@@ -72,10 +74,17 @@ function App() {
       const startDate = now.toISOString()
       let endDate = ''
       if (durationType === 'limited') {
-        let months = selectedDuration > 0 ? selectedDuration : (customUnit === 'years' ? customMonths * 12 : customMonths)
-        const end = new Date(now)
-        end.setMonth(end.getMonth() + months)
-        endDate = end.toISOString()
+        let months = 0
+        if (selectedDuration > 0) {
+          months = selectedDuration
+        } else if (customMonths) {
+          months = customUnit === 'years' ? parseInt(customMonths) * 12 : parseInt(customMonths)
+        }
+        if (months > 0) {
+          const end = new Date(now)
+          end.setMonth(end.getMonth() + months)
+          endDate = end.toISOString()
+        }
       }
 
       const result = await GenerateLicense(customerName, hardwareFingerprint, startDate, endDate)
@@ -94,6 +103,17 @@ function App() {
       await navigator.clipboard.writeText(licenseContent)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setMessage({ type: 'error', text: '复制失败' })
+    }
+  }
+
+  const handleCopyKey = async (type: 'private' | 'public') => {
+    if (!keyPair) return
+    try {
+      await navigator.clipboard.writeText(type === 'private' ? keyPair.privateKey : keyPair.publicKey)
+      setCopiedKey(type)
+      setTimeout(() => setCopiedKey(null), 2000)
     } catch {
       setMessage({ type: 'error', text: '复制失败' })
     }
@@ -130,6 +150,18 @@ function App() {
     }
   }
 
+  const handleQuickSelect = (value: number) => {
+    setSelectedDuration(value)
+    setCustomMonths('')
+  }
+
+  const handleCustomChange = (value: string) => {
+    setCustomMonths(value)
+    if (value) {
+      setSelectedDuration(0)
+    }
+  }
+
   return (
     <div className="app-shell">
       <div className="app-bg" aria-hidden="true">
@@ -147,7 +179,7 @@ function App() {
 
       <header className="app-header">
         <div className="app-title-row">
-          <h1 className="app-title">许可证分发工具</h1>
+          <h1 className="app-title">Cedar许可证生成工具</h1>
           <span className="app-version">v1.0.0</span>
         </div>
         <a className="app-link" href="https://www.cedar-v.com" target="_blank" rel="noopener noreferrer">
@@ -157,6 +189,13 @@ function App() {
 
       <main className="app-main">
         <div className="form-card">
+          <div className="sdk-hint">
+            <span className="sdk-hint-icon">&#x1F4D6;</span>
+            <span className="sdk-hint-text">
+              客户端接入可使用 <a href="https://github.com/cedar-v" target="_blank" rel="noopener noreferrer">Cedar-v LicenseManager</a> 相关 SDK
+            </span>
+          </div>
+
           <div className="form-toolbar">
             <button type="button" className="btn-pill" onClick={handleExportArchive}>
               下载存档
@@ -183,7 +222,7 @@ function App() {
           <section className="form-section">
             <h2 className="section-heading">
               <span className="section-accent" aria-hidden="true" />
-              机器指纹
+              机器指纹（取决于客户端的实现）
             </h2>
             <input
               className="text-input text-input-full"
@@ -194,8 +233,6 @@ function App() {
             />
           </section>
 
-          <hr className="section-rule" />
-
           <section className="form-section">
             <h2 className="section-heading section-heading-sub">
               <span className="section-accent" aria-hidden="true" />
@@ -203,7 +240,18 @@ function App() {
             </h2>
             <div className="key-grid">
               <div className="key-col">
-                <span className="key-title">私钥</span>
+                <div className="key-title-row">
+                  <span className="key-title">私钥</span>
+                  {keyPair && (
+                    <button
+                      type="button"
+                      className="key-copy-btn"
+                      onClick={() => handleCopyKey('private')}
+                    >
+                      {copiedKey === 'private' ? '已复制' : '复制'}
+                    </button>
+                  )}
+                </div>
                 <div className="key-box">
                   {keyPair ? (
                     <span className="key-snippet">{keyPair.privateKey.slice(0, 80)}…</span>
@@ -213,7 +261,18 @@ function App() {
                 </div>
               </div>
               <div className="key-col">
-                <span className="key-title">公钥</span>
+                <div className="key-title-row">
+                  <span className="key-title">公钥</span>
+                  {keyPair && (
+                    <button
+                      type="button"
+                      className="key-copy-btn"
+                      onClick={() => handleCopyKey('public')}
+                    >
+                      {copiedKey === 'public' ? '已复制' : '复制'}
+                    </button>
+                  )}
+                </div>
                 <div className="key-box">
                   {keyPair ? (
                     <span className="key-snippet">{keyPair.publicKey.slice(0, 80)}…</span>
@@ -225,29 +284,31 @@ function App() {
             </div>
           </section>
 
-          <hr className="section-rule" />
-
           <section className="form-section">
-            <h2 className="section-heading">
+            <h2 className="section-heading section-heading-sub">
               <span className="section-accent" aria-hidden="true" />
               授权时间
             </h2>
-            <div className="toggle-row">
-              <button
-                type="button"
-                className={`toggle-cell ${durationType === 'limited' ? 'is-on' : ''}`}
-                onClick={() => setDurationType('limited')}
-              >
-                有期限
-              </button>
-              <div className="toggle-sep" />
-              <button
-                type="button"
-                className={`toggle-cell ${durationType === 'unlimited' ? 'is-on' : ''}`}
-                onClick={() => setDurationType('unlimited')}
-              >
-                无期限
-              </button>
+            <div className="key-grid">
+              <div className="key-col">
+                <div className="toggle-row">
+                  <button
+                    type="button"
+                    className={`toggle-cell ${durationType === 'limited' ? 'is-on' : ''}`}
+                    onClick={() => setDurationType('limited')}
+                  >
+                    有期限
+                  </button>
+                  <div className="toggle-sep" />
+                  <button
+                    type="button"
+                    className={`toggle-cell ${durationType === 'unlimited' ? 'is-on' : ''}`}
+                    onClick={() => setDurationType('unlimited')}
+                  >
+                    无期限
+                  </button>
+                </div>
+              </div>
             </div>
 
             {durationType === 'limited' && (
@@ -259,7 +320,7 @@ function App() {
                       key={opt.value}
                       type="button"
                       className={`quick-cell ${selectedDuration === opt.value ? 'is-on' : ''}`}
-                      onClick={() => setSelectedDuration(opt.value)}
+                      onClick={() => handleQuickSelect(opt.value)}
                     >
                       {opt.label}
                     </button>
@@ -274,10 +335,8 @@ function App() {
                       min={1}
                       max={999}
                       value={customMonths}
-                      onChange={(e) => {
-                        setCustomMonths(Number(e.target.value))
-                        setSelectedDuration(0)
-                      }}
+                      onChange={(e) => handleCustomChange(e.target.value)}
+                      placeholder="请输入期限数"
                     />
                     <button
                       type="button"
@@ -297,6 +356,22 @@ function App() {
                 </div>
               </>
             )}
+          </section>
+
+          <section className="form-section">
+            <h2 className="section-heading section-heading-sub">
+              <span className="section-accent" aria-hidden="true" />
+              功能配置
+            </h2>
+            <div className="config-json-section">
+              <textarea
+                className="config-json-input"
+                value={configJson}
+                onChange={(e) => setConfigJson(e.target.value)}
+                placeholder="请输入 JSON 格式的功能配置"
+                rows={4}
+              />
+            </div>
           </section>
 
           <div className="form-actions">
