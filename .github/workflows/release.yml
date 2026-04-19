@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - 'releasev*'
   workflow_dispatch:
     inputs:
       version:
@@ -52,16 +53,21 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Set version for manual build
-        if: github.event_name == 'workflow_dispatch'
-        run: node -e "const fs=require('fs');const v='${{ github.event.inputs.version }}';const j=JSON.parse(fs.readFileSync('wails.json','utf8'));j.productVersion=v;fs.writeFileSync('wails.json',JSON.stringify(j,null,2)+'\n');console.log('version:',v);"
-
-      - name: Set version for tag build
-        if: github.event_name == 'push'
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          node -e "const fs=require('fs');const v='$VERSION';const j=JSON.parse(fs.readFileSync('wails.json','utf8'));j.productVersion=v;fs.writeFileSync('wails.json',JSON.stringify(j,null,2)+'\n');console.log('version:',v);"
+      - name: Set version
+        run: node -e "
+            const fs = require('fs');
+            let v;
+            if ('${{ github.event_name }}' === 'workflow_dispatch') {
+              v = '${{ github.event.inputs.version }}';
+            } else {
+              const ref = '${{ github.ref }}';
+              v = ref.replace('refs/tags/v', '').replace('refs/tags/releasev', '');
+            }
+            const j = JSON.parse(fs.readFileSync('wails.json', 'utf8'));
+            j.productVersion = v;
+            fs.writeFileSync('wails.json', JSON.stringify(j, null, 2) + '\n');
+            console.log('version:', v);
+          "
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -86,7 +92,7 @@ jobs:
 
   release:
     needs: build
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Download windows artifact
