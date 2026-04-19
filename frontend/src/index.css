@@ -138,6 +138,15 @@ pre,
   color: var(--主色);
 }
 
+.gh-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
 /* ========== Toast ========== */
 .toast {
   position: fixed;
