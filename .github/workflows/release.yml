@@ -101,17 +101,26 @@ jobs:
           path: build/artifacts
         continue-on-error: true
 
-      - name: Prepare release files
-        id: prepare
+      - name: Check artifacts
+        id: check
         run: |
-          FILES=$(find build/artifacts -type f | sort | tr '\n' ' ')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-          echo "count=$(find build/artifacts -type f | wc -l)" >> $GITHUB_OUTPUT
+          COUNT=$(find build/artifacts -type f | wc -l)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No artifacts found, skipping release."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload to GitHub Release
-        if: steps.prepare.outputs.count > 0
+        if: steps.check.outputs.skip == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ steps.prepare.outputs.files }}
+          files: |
+            build/artifacts/CedarLicenseTool-windows-amd64.exe
+            build/artifacts/CedarLicenseTool-linux-amd64
+            build/artifacts/CedarLicenseTool-darwin-amd64
+            build/artifacts/CedarLicenseTool-darwin-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
