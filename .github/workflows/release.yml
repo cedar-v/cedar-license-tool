@@ -101,26 +101,35 @@ jobs:
           path: build/artifacts
         continue-on-error: true
 
-      - name: Check artifacts
-        id: check
+      - name: Flatten artifacts
+        id: flatten
         run: |
-          COUNT=$(find build/artifacts -type f | wc -l)
+          mkdir -p build/release
+          # List what was downloaded (each artifact is a subdir)
+          echo "=== Downloaded structure ===" >&2
+          find build/artifacts -type f 2>/dev/null | head -20 >&2
+          # Each artifact has its own subdirectory. Copy and rename to flat names.
+          [ -f build/artifacts/CedarLicenseTool-windows-amd64/CedarLicenseTool.exe ] && \
+            cp build/artifacts/CedarLicenseTool-windows-amd64/CedarLicenseTool.exe \
+               build/release/CedarLicenseTool-windows-amd64.exe
+          [ -f build/artifacts/CedarLicenseTool-linux-amd64/CedarLicenseTool ] && \
+            cp build/artifacts/CedarLicenseTool-linux-amd64/CedarLicenseTool \
+               build/release/CedarLicenseTool-linux-amd64
+          [ -f build/artifacts/CedarLicenseTool-darwin-amd64/CedarLicenseTool ] && \
+            cp build/artifacts/CedarLicenseTool-darwin-amd64/CedarLicenseTool \
+               build/release/CedarLicenseTool-darwin-amd64
+          [ -f build/artifacts/CedarLicenseTool-darwin-arm64/CedarLicenseTool ] && \
+            cp build/artifacts/CedarLicenseTool-darwin-arm64/CedarLicenseTool \
+               build/release/CedarLicenseTool-darwin-arm64
+          COUNT=$(find build/release -type f | wc -l)
           echo "count=$COUNT" >> $GITHUB_OUTPUT
-          if [ "$COUNT" -eq 0 ]; then
-            echo "No artifacts found, skipping release."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+          echo "=== Release files ($COUNT) ===" >&2
+          ls -la build/release/ >&2
 
       - name: Upload to GitHub Release
-        if: steps.check.outputs.skip == 'false'
+        if: steps.flatten.outputs.count > 0
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            build/artifacts/CedarLicenseTool-windows-amd64.exe
-            build/artifacts/CedarLicenseTool-linux-amd64
-            build/artifacts/CedarLicenseTool-darwin-amd64
-            build/artifacts/CedarLicenseTool-darwin-arm64
+          files: build/release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
