@@ -48,3 +48,9 @@ wailsjs/
 .env
 .env.local
 .env.*.local
+
+# Keys (sensitive)
+keys/
+
+# Output licenses
+output/
