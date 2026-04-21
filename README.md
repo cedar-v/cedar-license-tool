@@ -2,6 +2,10 @@
 
 Wails v2 桌面应用，用于生成带有 RSA 数字签名的许可证文件，与 [license-manager-enterprise](https://github.com/cedar/license-manager-enterprise) 完全兼容。
 
+## 工具截图
+
+![工具截图](./docs/tool-image.png)
+
 ## 技术栈
 
 | 组件 | 技术 |
